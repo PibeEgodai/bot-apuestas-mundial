@@ -305,7 +305,7 @@ async def generar_partidos_apuestas(update: Update, lineas):
 
     for p in partidos:
         hora = p["hora"].strftime("%H:%M")
-        respuesta += f"        {hora} Hrs. - ({p['etapa']}) {p['pais_1']} vs {p['pais_2']}\n"
+        respuesta += f"• {hora} Hrs. - ({p['etapa']}) {p['pais_1']} vs {p['pais_2']}\n"
 
     await update.message.reply_text(respuesta.rstrip())
 
@@ -575,7 +575,7 @@ async def generar_resultados_apuestas(update: Update, lineas):
         else:
             texto_puntaje = f"{r['puntaje']} Pts."
 
-        respuesta += f"        Partido {r['partido']}: {texto_puntaje}\n"
+        respuesta += f"• Partido {r['partido']}: {texto_puntaje}\n"
 
     await update.message.reply_text(respuesta.rstrip())
 
@@ -672,7 +672,7 @@ async def mostrar_apuestas_partido(update: Update, lineas):
             marcador = f"{r['resultado_1']} - {r['resultado_2']}"
 
         puntaje = "NULL" if r["puntaje"] is None else f"{r['puntaje']} Pts."
-        respuesta += f"{r['participante']}: {marcador}"
+        respuesta += f"• {r['participante']}: {marcador}"
 
     await update.message.reply_text(respuesta.rstrip())
 
