@@ -671,8 +671,8 @@ async def mostrar_apuestas_partido(update: Update, lineas):
         else:
             marcador = f"{r['resultado_1']} - {r['resultado_2']}"
 
-        puntaje = "NULL" if r["puntaje"] is None else f"{r['puntaje']} Pts.\n"
-        respuesta += f"• {r['participante']}: {marcador}"
+        puntaje = "NULL" if r["puntaje"] is None else f"{r['puntaje']} Pts."
+        respuesta += f"• {r['participante']}: {marcador}\n"
 
     await update.message.reply_text(respuesta.rstrip())
 
