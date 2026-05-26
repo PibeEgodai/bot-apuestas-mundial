@@ -266,12 +266,6 @@ Ejemplo:
 EliminarApuestasPartido
 42
 
-RecalcularPuntajesPartido
-Recalcula los puntajes de un partido.
-Ejemplo:
-RecalcularPuntajesPartido
-42
-
 Comandos
 Muestra este listado de comandos.
 Ejemplo:
@@ -443,7 +437,7 @@ async def ingresar_apuestas(update: Update, lineas):
 
         conn.commit()
 
-    await update.message.reply_text(f"Apuestas ingresadas/actualizadas para el Partido {partido}: {insertadas}")
+    await update.message.reply_text(f"Apuestas actualizadas para el Partido {partido}: {insertadas}")
 
 
 async def ingresar_resultado(update: Update, lineas):
@@ -622,9 +616,9 @@ async def generar_ranking(update: Update):
         else:
             pos = f"{idx}º"
 
-        respuesta += f"{pos:>3} - {nombre:<14} {total:>3} Pts.\n"
+        respuesta += f"{pos} - {nombre} ({total} Pts.)\n"
 
-    await update.message.reply_text(f"<pre>{respuesta.rstrip()}</pre>", parse_mode="HTML")
+    await update.message.reply_text(respuesta.rstrip())
 
 
 async def mostrar_apuestas_partido(update: Update, lineas):
@@ -678,7 +672,7 @@ async def mostrar_apuestas_partido(update: Update, lineas):
             marcador = f"{r['resultado_1']} - {r['resultado_2']}"
 
         puntaje = "NULL" if r["puntaje"] is None else f"{r['puntaje']} Pts."
-        respuesta += f"{r['participante']}: {marcador} | {puntaje} | {r['estado']}\n"
+        respuesta += f"{r['participante']}: {marcador}"
 
     await update.message.reply_text(respuesta.rstrip())
 
@@ -708,97 +702,6 @@ async def eliminar_apuestas_partido(update: Update, lineas):
         conn.commit()
 
     await update.message.reply_text(f"Apuestas eliminadas para el Partido {partido}: {eliminadas}")
-
-
-async def recalcular_puntajes_partido(update: Update, lineas):
-    if len(lineas) < 2:
-        await update.message.reply_text("Debes indicar partido. Ejemplo:\nRecalcularPuntajesPartido\n42")
-        return
-
-    try:
-        partido = int(lineas[1].strip())
-    except ValueError:
-        await update.message.reply_text("El partido debe ser numérico.")
-        return
-
-    modificados = 0
-    recalculados = 0
-
-    with get_conn() as conn:
-        with conn.cursor() as cur:
-            cur.execute(
-                """
-                SELECT resultado_1, resultado_2
-                FROM calendario
-                WHERE partido = %s
-                """,
-                (partido,),
-            )
-            res = cur.fetchone()
-
-            if not res:
-                await update.message.reply_text("No existe el partido indicado.")
-                return
-
-            if res["resultado_1"] is None or res["resultado_2"] is None:
-                await update.message.reply_text("El partido aún no tiene resultado ingresado.")
-                return
-
-            cur.execute(
-                """
-                SELECT id, resultado_1, resultado_2, puntaje
-                FROM apuestas
-                WHERE partido = %s
-                """,
-                (partido,),
-            )
-            apuestas = cur.fetchall()
-
-            for a in apuestas:
-                if a["resultado_1"] is None or a["resultado_2"] is None:
-                    cur.execute(
-                        """
-                        UPDATE apuestas
-                        SET puntaje = 0,
-                            estado = 'SIN_APUESTA'
-                        WHERE id = %s
-                        """,
-                        (a["id"],),
-                    )
-                    continue
-
-                nuevo_puntaje = calcular_puntaje(
-                    res["resultado_1"],
-                    res["resultado_2"],
-                    a["resultado_1"],
-                    a["resultado_2"],
-                )
-
-                nuevo_estado = "CALCULADA"
-
-                if a["puntaje"] is not None and a["puntaje"] != nuevo_puntaje:
-                    nuevo_estado = "MODIFICADO"
-                    modificados += 1
-
-                cur.execute(
-                    """
-                    UPDATE apuestas
-                    SET puntaje = %s,
-                        estado = %s
-                    WHERE id = %s
-                    """,
-                    (nuevo_puntaje, nuevo_estado, a["id"]),
-                )
-
-                recalculados += 1
-
-        conn.commit()
-
-    await update.message.reply_text(
-        f"Puntajes recalculados para el Partido {partido}.\n"
-        f"Recalculados: {recalculados}\n"
-        f"Modificados: {modificados}"
-    )
 
 
 async def router(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -840,9 +743,6 @@ async def router(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         elif comando == "eliminarapuestaspartido":
             await eliminar_apuestas_partido(update, lineas)
-
-        elif comando == "recalcularpuntajespartido":
-            await recalcular_puntajes_partido(update, lineas)
 
         else:
             await update.message.reply_text("Comando no reconocido. Usa:\nComandos")
