@@ -374,11 +374,6 @@ async def ingresar_apuestas(update: Update, lineas):
         await update.message.reply_text("El partido debe ser numérico.")
         return
 
-    permitido, mensaje = validar_limite_apuesta(partido)
-    if not permitido:
-        await update.message.reply_text(mensaje)
-        return
-
     apuestas = []
     errores = []
 
